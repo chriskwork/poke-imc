@@ -1,3 +1,5 @@
-int calculate() {
-  return 6 * 7;
+class PokeImcApp {
+  void init() {
+    print('hello');
+  }
 }

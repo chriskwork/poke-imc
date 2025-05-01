@@ -1,5 +1,5 @@
-import 'package:pokeimc/pokeimc.dart' as pokeimc;
+import 'package:pokeimc/pokeimc.dart';
 
-void main(List<String> arguments) {
-  print('Hello world: ${pokeimc.calculate()}!');
+void main() {
+  PokeImcApp().init();
 }
