@@ -30,9 +30,11 @@ class Menu {
       switch (option) {
         case '1':
           print('menu 1 selected');
+          // sign up
           break;
         case '2':
           print('menu 2 selected');
+          // login
           break;
         case '3':
           // logout()
