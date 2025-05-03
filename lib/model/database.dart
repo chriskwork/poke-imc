@@ -1,8 +1,10 @@
+import 'dart:convert';
+
 import 'package:mysql1/mysql1.dart';
+import 'package:http/http.dart' as http;
 
 class Database {
   late MySqlConnection conn;
-  bool isDB = false;
 
   // Primera conexion: sin BD
   final tempSettings = ConnectionSettings(
@@ -20,12 +22,13 @@ class Database {
   );
 
   Future<void> connect() async {
+    // Esta App es para 'single user' en su dispositivo local
+    // por eso, he decidido que se estará conectado al servidor
+    // hasta que provoke UserSessionHandler().logout()
     try {
       conn = await MySqlConnection.connect(settings);
     } catch (e) {
       final tempConn = await MySqlConnection.connect(tempSettings);
-
-      print('\n🔄 Creando Base de Datos..\n');
 
       // Crear base de datos
       await tempConn.query('CREATE DATABASE IF NOT EXISTS pokeimc');
@@ -33,14 +36,20 @@ class Database {
 
       conn = await MySqlConnection.connect(settings);
       // Crear las tablas
-      await _crearTablas();
+      print(
+        'Es tu primera visita! Dejame preparar los datos un momento por favor.',
+      );
+      _crearTablas();
+      initPokemonData();
 
       print('🙌 Ya está!\n');
     }
   }
 
   // Las tablas
-  Future<void> _crearTablas() async {
+  void _crearTablas() async {
+    print('\n🔄 Creando Los Base de Datos..\n');
+
     await conn.query('''
         CREATE TABLE IF NOT EXISTS trainer (
         id int NOT NULL AUTO_INCREMENT PRIMARY KEY,
@@ -78,5 +87,66 @@ class Database {
         FOREIGN KEY (trainer_id) REFERENCES trainer(id),
         FOREIGN KEY (pokemon_id) REFERENCES pokemon(id)
     )''');
+  }
+
+  // Llamar los datos desde el pokeAPI y gardar en el base de dato
+  // usaré solo 100 pokemones.
+  void initPokemonData() async {
+    const String pokeAPI = 'https://pokeapi.co/api/v2/pokemon';
+
+    print('🔄 Inicializando datos de Pokémon...');
+
+    try {
+      for (int i = 1; i <= 100; i++) {
+        final res = await http.get(Uri.parse('$pokeAPI/$i'));
+
+        if (res.statusCode == 200) {
+          final data = json.decode(res.body);
+
+          // Obtener IMC de Pokemon
+          double pokemonHeight = data['height'] / 10;
+          double pokemonWeight = data['weight'] / 10;
+          double pokemonImc = pokemonWeight / (pokemonHeight * pokemonHeight);
+          String pokemonImcStatus = imcStatusLogic(pokemonImc);
+
+          await conn.query(
+            'INSERT INTO pokemon (int, name, height, weight, imc, imc_status) VALUES (?, ?, ?, ?, ?, ?)',
+            [
+              data['id'],
+              data['name'],
+              pokemonHeight,
+              pokemonWeight,
+              pokemonImc,
+              pokemonImcStatus,
+            ],
+          );
+
+          if (i % 10 == 0) {
+            print('🔄 Cargando $i%...');
+          }
+        }
+      }
+
+      print('\n');
+    } catch (e) {
+      throw Exception(e);
+    }
+  }
+
+  String imcStatusLogic(double pokemonImc) {
+    var pokemonImcStatus = '';
+
+    // Clasificar estado del IMC
+    if (pokemonImc < 18.5) {
+      pokemonImcStatus = 'Bajo Peso';
+    } else if (pokemonImc < 22.9) {
+      pokemonImcStatus = 'Normal';
+    } else if (pokemonImc < 24.9) {
+      pokemonImcStatus = 'Sobrepeso';
+    } else {
+      pokemonImcStatus = 'Obesidad';
+    }
+
+    return pokemonImcStatus;
   }
 }
