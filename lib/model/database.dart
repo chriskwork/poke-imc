@@ -39,15 +39,15 @@ class Database {
       print(
         'Es tu primera visita! Dejame preparar los datos un momento por favor.',
       );
-      _crearTablas();
-      initPokemonData();
+      await _crearTablas();
+      await initPokemonData();
 
       print('🙌 Ya está!\n');
     }
   }
 
   // Las tablas
-  void _crearTablas() async {
+  Future<void> _crearTablas() async {
     print('\n🔄 Creando Los Base de Datos..\n');
 
     await conn.query('''
@@ -91,7 +91,7 @@ class Database {
 
   // Llamar los datos desde el pokeAPI y gardar en el base de dato
   // usaré solo 100 pokemones.
-  void initPokemonData() async {
+  Future<void> initPokemonData() async {
     const String pokeAPI = 'https://pokeapi.co/api/v2/pokemon';
 
     print('🔄 Inicializando datos de Pokémon...');
