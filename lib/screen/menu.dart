@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:pokeimc/model/database.dart';
 import 'package:pokeimc/model/session.dart';
+import 'package:pokeimc/model/user.dart';
 
 class Menu {
   final db = Database();
@@ -13,18 +14,18 @@ class Menu {
     print('');
 
     await db.connect();
-    showInitMenu();
+    showInitMenu(db);
   }
 
-  void showInitMenu() {
+  void showInitMenu(Database db) {
     String? option;
     final session = UserSessionHandler(db);
 
     do {
       stdout.write('** Elige una opción **');
       print('\n');
-      print('-> 1. Registrar');
-      print('-> 2. Iniciar sessión');
+      print('-> 1. Iniciar sessión');
+      print('-> 2. Registrar');
       print('-> 3. Salir');
       print('');
 
@@ -32,12 +33,12 @@ class Menu {
 
       switch (option) {
         case '1':
-          // sign up
-          session.signUp();
-          break;
-        case '2':
           // login
           session.login();
+          break;
+        case '2':
+          // sign up
+          session.signUp();
           break;
         case '3':
           // logout()
@@ -50,8 +51,9 @@ class Menu {
     } while (option == '');
   }
 
-  void showMeinMenu(int userId) async {
+  void showMainMenu(int userId) async {
     String selectedOption = '';
+    final session = UserSessionHandler(db);
 
     do {
       print('===== OPCIONES 👇 =====');
@@ -59,15 +61,16 @@ class Menu {
       print('2. Ver mi IMC');
       print('3. Salir');
 
-      stdout.write('Elige una optión => ');
+      stdout.write('\nElige una optión => ');
       selectedOption = stdin.readLineSync() ?? '';
 
       if (selectedOption == '1') {
-        print('menu option 1');
+        print('Ver mi pokemon');
       } else if (selectedOption == '2') {
-        print('menu option 2');
+        await User(db).showMyImc(userId);
       } else if (selectedOption == '3') {
-        UserSessionHandler().logout();
+        session.logout();
+        exit(0);
       }
     } while (selectedOption.isEmpty);
   }

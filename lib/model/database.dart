@@ -1,10 +1,11 @@
 import 'dart:convert';
-
 import 'package:mysql1/mysql1.dart';
 import 'package:http/http.dart' as http;
+import 'package:pokeimc/model/imc_calculator.dart';
 
 class Database {
   late MySqlConnection conn;
+  bool isConnected = false;
 
   // Primera conexion: sin BD
   final tempSettings = ConnectionSettings(
@@ -22,11 +23,14 @@ class Database {
   );
 
   Future<void> connect() async {
+    if (isConnected) return;
+
     // Esta App es para 'single user' en su dispositivo local
     // por eso, he decidido que se estará conectado al servidor
     // hasta que provoke UserSessionHandler().logout()
     try {
       conn = await MySqlConnection.connect(settings);
+      isConnected = true;
     } catch (e) {
       final tempConn = await MySqlConnection.connect(tempSettings);
 
@@ -35,9 +39,11 @@ class Database {
       await tempConn.close();
 
       conn = await MySqlConnection.connect(settings);
+      isConnected = true;
+
       // Crear las tablas
       print(
-        'Es tu primera visita! Dejame preparar los datos un momento por favor.',
+        'Es tu primera visita! Déjame preparar los datos un momento por favor.',
       );
       await _crearTablas();
       await initPokemonData();
@@ -70,7 +76,7 @@ class Database {
     )''');
     await conn.query('''
         CREATE TABLE IF NOT EXISTS pokemon (
-        id int NOT NULL PRIMARY KEY,
+        id int NOT NULL AUTO_INCREMENT PRIMARY KEY,
         name varchar(50) NOT NULL,
         height decimal(5,2) NOT NULL,
         weight decimal(5,2) NOT NULL,
@@ -106,11 +112,11 @@ class Database {
           // Obtener IMC de Pokemon
           double pokemonHeight = data['height'] / 10;
           double pokemonWeight = data['weight'] / 10;
-          double pokemonImc = pokemonWeight / (pokemonHeight * pokemonHeight);
+          double pokemonImc = imcCalculator(pokemonWeight, pokemonHeight);
           String pokemonImcStatus = imcStatusLogic(pokemonImc);
 
           await conn.query(
-            'INSERT INTO pokemon (int, name, height, weight, imc, imc_status) VALUES (?, ?, ?, ?, ?, ?)',
+            'INSERT INTO pokemon (id, name, height, weight, imc, imc_status) VALUES (?, ?, ?, ?, ?, ?)',
             [
               data['id'],
               data['name'],
@@ -133,20 +139,23 @@ class Database {
     }
   }
 
-  String imcStatusLogic(double pokemonImc) {
-    var pokemonImcStatus = '';
-
-    // Clasificar estado del IMC
-    if (pokemonImc < 18.5) {
-      pokemonImcStatus = 'Bajo Peso';
-    } else if (pokemonImc < 22.9) {
-      pokemonImcStatus = 'Normal';
-    } else if (pokemonImc < 24.9) {
-      pokemonImcStatus = 'Sobrepeso';
-    } else {
-      pokemonImcStatus = 'Obesidad';
+  Future<bool> ensuerConnected() async {
+    if (!isConnected) {
+      try {
+        await connect();
+        return true;
+      } catch (e) {
+        print('❌ Error de conexión: $e');
+        return false;
+      }
     }
+    return true;
+  }
 
-    return pokemonImcStatus;
+  Future<void> close() async {
+    if (isConnected) {
+      await conn.close();
+      isConnected = false;
+    }
   }
 }

@@ -1,6 +1,7 @@
 import 'dart:io';
-
 import 'package:pokeimc/model/database.dart';
+import 'package:pokeimc/model/imc_calculator.dart';
+import 'package:pokeimc/screen/menu.dart';
 
 class UserSessionHandler {
   final Database db;
@@ -26,11 +27,11 @@ class UserSessionHandler {
         _inputPassword = stdin.readLineSync() ?? '';
       } while (_inputPassword.isEmpty);
     } catch (e) {
-      throw Exception(e);
+      throw Exception('Login error, $e');
     }
 
     var result = await db.conn.query(
-      'SELECT * FROM trainer WHERE name = ?, password = ?',
+      'SELECT * FROM trainer WHERE name = ? AND password = ?',
       [inputUsername, _inputPassword],
     );
 
@@ -40,6 +41,7 @@ class UserSessionHandler {
       trainerName = row['name'];
 
       print('\n✔ Bienvenid@, $trainerName \n');
+      Menu().showMainMenu(trainerID!);
     } else {
       print('⚠ Login Error!');
     }
@@ -59,7 +61,7 @@ class UserSessionHandler {
     trainerID = result.insertId;
 
     // Calcular IMC
-    double userImcResult = user["weight"] / (user["height"] * user["height"]);
+    double userImcResult = imcCalculator(user["weight"], user["height"]);
     String userImcStatus = imcStatusLogic(userImcResult);
 
     // Insertar la altura, el peso de user en base de dato
@@ -67,10 +69,12 @@ class UserSessionHandler {
       'INSERT INTO trainer_imc (trainer_id, height, weight, imc, imc_status) VALUES (?, ?, ?, ?, ?)',
       [trainerID, user["height"], user["weight"], userImcResult, userImcStatus],
     );
+
+    Menu().showMainMenu(trainerID!);
   }
 
   Future<Map<String, dynamic>> newUserInputData() async {
-    print('Registrar como Trainer\n');
+    print('====[ Registrar como Trainer ]====\n');
 
     String inputName;
     String inputPassword;
@@ -81,10 +85,19 @@ class UserSessionHandler {
     do {
       stdout.write('(1/4) Crear el nombre de Trainer: ');
       inputName = stdin.readLineSync() ?? '';
-      bool checkUserName = await isNameExist(inputName);
-      if (!checkUserName) {
-        print('❌ El nombre ya extiste. Elige otro nombre.');
+
+      if (inputName.isEmpty) {
+        print('❌ El nombre no puede estar vacío.');
         continue;
+      }
+
+      bool isUnique = await isNameExist(inputName);
+
+      if (isUnique) {
+        print('❌ El nombre ya extiste. Elige otro nombre.');
+        inputName = '';
+      } else {
+        print('✅ Nombre disponible. Puedes usar este nombre.');
       }
     } while (inputName.isEmpty);
 
@@ -130,6 +143,8 @@ class UserSessionHandler {
       }
     } while (userWeight == null || userWeight <= 0);
 
+    print('\n✔ ¡Registro completado!\n');
+
     return user = {
       "name": inputName,
       "password": inputPassword,
@@ -146,32 +161,12 @@ class UserSessionHandler {
         [name],
       );
 
-      if (result.first['name'] == name) {
-        return true;
-      } else {
-        return false;
-      }
+      return result.isEmpty ? false : true;
     } catch (e) {
-      throw Exception(e);
+      throw Exception('Error, $e');
     }
   }
 
-  String imcStatusLogic(double imc) {
-    var imcStatus = '';
-
-    // Clasificar estado del IMC
-    if (imc < 18.5) {
-      imcStatus = 'Bajo Peso';
-    } else if (imc < 22.9) {
-      imcStatus = 'Normal';
-    } else if (imc < 24.9) {
-      imcStatus = 'Sobrepeso';
-    } else {
-      imcStatus = 'Obesidad';
-    }
-
-    return imcStatus;
-  }
   //==================================================
 
   // logout
