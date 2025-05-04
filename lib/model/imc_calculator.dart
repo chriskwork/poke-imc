@@ -8,13 +8,13 @@ String imcStatusLogic(double imc) {
 
   // Clasificar estado del IMC
   if (imc < 18.5) {
-    imcStatus = 'Bajo Peso';
+    imcStatus = '🦴 Bajo Peso';
   } else if (imc < 22.9) {
-    imcStatus = 'Normal';
+    imcStatus = '💪 Normal';
   } else if (imc < 24.9) {
-    imcStatus = 'Sobrepeso';
+    imcStatus = '🐻 Sobrepeso';
   } else {
-    imcStatus = 'Obesidad';
+    imcStatus = '🐘 Obesidad';
   }
 
   return imcStatus;
