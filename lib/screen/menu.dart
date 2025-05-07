@@ -66,8 +66,10 @@ class Menu {
 
       if (selectedOption == '1') {
         print('Ver mi pokemon');
+        showMainMenu(userId);
       } else if (selectedOption == '2') {
         await User(db).showMyImc(userId);
+        showMainMenu(userId);
       } else if (selectedOption == '3') {
         session.logout();
         exit(0);

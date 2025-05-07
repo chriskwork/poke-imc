@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:pokeimc/model/database.dart';
 import 'package:pokeimc/model/imc_calculator.dart';
+import 'package:pokeimc/model/user.dart';
 import 'package:pokeimc/screen/menu.dart';
 
 class UserSessionHandler {
@@ -40,7 +41,7 @@ class UserSessionHandler {
       trainerID = row['id'];
       trainerName = row['name'];
 
-      print('\n✔ Bienvenid@, $trainerName \n');
+      print('\n✅ Bienvenid@, $trainerName \n');
       Menu().showMainMenu(trainerID!);
     } else {
       print('⚠ Login Error!\n');
@@ -65,11 +66,16 @@ class UserSessionHandler {
     double userImcResult = imcCalculator(user["weight"], user["height"]);
     String userImcStatus = imcStatusLogic(userImcResult);
 
-    // Insertar la altura, el peso de user en base de dato
+    // Insertar la altura, el peso de User en base de dato
     await db.conn.query(
       'INSERT INTO trainer_imc (trainer_id, height, weight, imc, imc_status) VALUES (?, ?, ?, ?, ?)',
       [trainerID, user["height"], user["weight"], userImcResult, userImcStatus],
     );
+
+    // Registrar el pokemon de User
+    await User(db).matchMyPokemon(trainerID!);
+
+    print('\n✔ ¡Registro completado!\n');
 
     Menu().showMainMenu(trainerID!);
   }
@@ -143,8 +149,6 @@ class UserSessionHandler {
         userWeight = null;
       }
     } while (userWeight == null || userWeight <= 0);
-
-    print('\n✔ ¡Registro completado!\n');
 
     return user = {
       "name": inputName,

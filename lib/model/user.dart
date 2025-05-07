@@ -1,30 +1,9 @@
 import 'package:pokeimc/model/database.dart';
-import 'package:mysql1/mysql1.dart';
 
 class User {
   final Database db;
 
   User(this.db);
-
-  // int? id;
-  // String name;
-  // String _password;
-  // double height;
-  // double weight;
-
-  // User({
-  //   this.id,
-  //   required this.name,
-  //   required String password,
-  //   required this.height,
-  //   required this.weight,
-  // }) : _password = password;
-
-  // String get password => _password;
-
-  // set password(String password) {
-  //   _password = password;
-  // }
 
   // Ver mi Imc
   Future<void> showMyImc(int userId) async {
@@ -32,21 +11,21 @@ class User {
 
     if (checkConnection) {
       try {
-        var result = await db.conn.query(
+        var trainerImc = await db.conn.query(
           'SELECT imc, imc_status FROM trainer_imc WHERE trainer_id = ?',
           [userId],
         );
 
-        String matchedPokemon = await findMyPokemon(userId);
+        var trainerPokemonName = await getTrainerPokemonName(userId);
 
         // Resultado
-        print('====[ VER IMC ]====');
+        print('\n====[ VER IMC ]====\n');
         print(
-          'Tu IMC es ${result.first["imc"]} (${result.first["imc_status"]})\n',
+          'Tu IMC es ${trainerImc.first["imc"]} (${trainerImc.first["imc_status"]})',
         );
-        print('Tu pokemon es $matchedPokemon!\n');
+        print('Tu pokemon es $trainerPokemonName! \n');
         print(
-          'Depende de tu IMC, podrás obtener mejor(o peor) pokemon luego. 😁\n',
+          '(Depende de tu IMC, podrás obtener mejor(o peor) pokemon luego. 😁)\n',
         );
       } catch (e) {
         throw Exception('Error showMyImc(), $e');
@@ -56,9 +35,18 @@ class User {
     }
   }
 
+  Future<String> getTrainerPokemonName(int userId) async {
+    var result = await db.conn.query(
+      'SELECT * FROM trainer_pokemon WHERE trainer_id = ?',
+      [userId],
+    );
+
+    return result.first.isNotEmpty ? result.first['pokemon_name'] : '';
+  }
+
   // Buscar y coincidir un pokemon que tiene el mismo tipo de IMC con user.
-  Future<String> findMyPokemon(int userId) async {
-    print('🔍 Buscando tu pokemon..\n');
+  Future<void> matchMyPokemon(int userId) async {
+    // String getUserPokemonName = await hasPokemon(userId);
 
     // Se va a elegir un pokemon que tenga el mismo estado de IMC de user.
     var matchingPokemon = await db.conn.query(
@@ -85,10 +73,25 @@ class User {
       'INSERT INTO trainer_pokemon (trainer_id, pokemon_id, pokemon_name) VALUES (?, ?, ?)',
       [userId, matchedPokemonId, matchedPokemonName],
     );
-
-    return matchedPokemonName;
   }
 
   // Check si user tiene su pokemon o no
-  Future<bool> hasPokemon(int userId) async {}
+  // (No se necesita ahora: matching pokemon solo se eje una vez en Signup)
+
+  // Future<String> hasPokemon(int userId) async {
+  //   try {
+  //     var result = await db.conn.query(
+  //       'SELECT * FROM trainer_pokemon WHERE trainer_id = ?',
+  //       [userId],
+  //     );
+
+  //     String trainerPokemonName = result.first['pokemon_name'];
+
+  //     return trainerPokemonName.isEmpty
+  //         ? trainerPokemonName = ''
+  //         : trainerPokemonName;
+  //   } catch (e) {
+  //     throw Exception('hasPokemon() error, $e');
+  //   }
+  // }
 }
