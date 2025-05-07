@@ -43,7 +43,8 @@ class UserSessionHandler {
       print('\n✔ Bienvenid@, $trainerName \n');
       Menu().showMainMenu(trainerID!);
     } else {
-      print('⚠ Login Error!');
+      print('⚠ Login Error!\n');
+      Menu().showInitMenu(db);
     }
   }
 
@@ -180,6 +181,4 @@ class UserSessionHandler {
       throw Exception(e);
     }
   }
-
-  // get trainer.id, use it for getting info.
 }

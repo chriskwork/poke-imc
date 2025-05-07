@@ -139,7 +139,7 @@ class Database {
     }
   }
 
-  Future<bool> ensuerConnected() async {
+  Future<bool> ensureConnected() async {
     if (!isConnected) {
       try {
         await connect();
