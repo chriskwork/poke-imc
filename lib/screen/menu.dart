@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:pokeimc/model/database.dart';
+import 'package:pokeimc/model/pokemon.dart';
 import 'package:pokeimc/model/session.dart';
 import 'package:pokeimc/model/user.dart';
 
@@ -65,7 +66,7 @@ class Menu {
       selectedOption = stdin.readLineSync() ?? '';
 
       if (selectedOption == '1') {
-        print('Ver mi pokemon');
+        await Pokemon(db).pokemonDetail(userId);
         showMainMenu(userId);
       } else if (selectedOption == '2') {
         await User(db).showMyImc(userId);
